@@ -20,6 +20,9 @@ if not errorlevel 1 (
 		echo.
 		curl -L "!URL!" -o tmp.bin || exit /b 1
 		ren tmp.bin "!FILENAME!" >nul 2>&1
+	) else (
+	cls
+	echo !FILENAME! is up-to-date.
 	)
 
 	:: patches update
@@ -35,6 +38,9 @@ if not errorlevel 1 (
 		echo.
 		curl -L "!URL!" -o tmp.bin || exit /b 1
 		ren tmp.bin "!FILENAME!" >nul 2>&1
+	) else (
+	cls
+	echo !FILENAME! is up-to-date.
 	)
 
 	:: MicroG-RE update
@@ -50,6 +56,9 @@ if not errorlevel 1 (
 		echo.
 		curl -L "!URL!" -o tmp.bin || exit /b 1
 		ren tmp.bin "!FILENAME!" >nul 2>&1
+	) else (
+	cls
+	echo !FILENAME! is up-to-date.
 	)
 
 	:: APKEditor update
@@ -65,6 +74,9 @@ if not errorlevel 1 (
 		echo.
 		curl -L "!URL!" -o tmp.bin || exit /b 1
 		ren tmp.bin "!FILENAME!" >nul 2>&1
+	) else (
+	cls
+	echo !FILENAME! is up-to-date.
 	)
 
 )
@@ -74,6 +86,16 @@ if not errorlevel 1 (
 for %%i in ("morphe-cli*.jar") do set cli=%%i
 for %%i in ("patches-*.mpp") do set patches=%%i
 for %%i in ("APKEditor-*.jar") do set apkeditor=%%i
+
+
+REM :: maintainer
+REM if exist "maintain\*.apk" (
+	REM for %%i in ("!patches!") do (
+		REM if not exist "maintain\*%%~ni*.apk" (
+			REM pause
+		REM )
+	REM )
+REM )
 
 
 :: lessgo
@@ -134,7 +156,7 @@ echo Unknown command, sorry :( && goto done
 		move /y morphe-patched.apk "%%~dpi" >nul 2>&1
 		del /f /q "%%~dpni-patched.apk" >nul 2>&1
 		ren "%%~dpimorphe-patched.apk" "%%~ni-patched.apk" >nul 2>&1
-		adb get-state 1>nul 2>nul && adb install "%%~dpni-patched.apk"
+		REM adb get-state 1>nul 2>nul && adb install "%%~dpni-patched.apk"
 	)
 	)
 	goto done
