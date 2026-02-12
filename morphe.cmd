@@ -131,14 +131,14 @@ if not errorlevel 1 (
 		cls
 		echo Downloading 7z.exe
 		echo.
-		curl -L -f "0.0.0.0" -o tmp.bin || ( echo. & pause & exit )
+		curl -L -f "https://raw.githubusercontent.com/herrblitzkrieg/morphe-cli-helper/main/7z.exe" -o tmp.bin || ( echo. & pause & exit )
 		ren tmp.bin 7z.exe >nul 2>&1
 	)
 	if not exist 7z.dll	(
 		cls
 		echo Downloading 7z.dll
 		echo.
-		curl -L -f "0.0.0.0" -o tmp.bin || ( echo. & pause & exit )
+		curl -L -f "https://raw.githubusercontent.com/herrblitzkrieg/morphe-cli-helper/main/7z.dll" -o tmp.bin || ( echo. & pause & exit )
 		ren tmp.bin 7z.dll >nul 2>&1
 	)
 	

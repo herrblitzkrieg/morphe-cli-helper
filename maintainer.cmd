@@ -14,8 +14,8 @@ for %%i in ("patches-*.mpp") do set patches=%%i
 for %%i in ("microg-*.apk") do set microg=%%i
 for %%i in ("APKEditor-*.jar") do set apkeditor=%%i
 set 7z="7z.exe"
-md maintain\original
-md maintain\patched
+md maintain\original >nul 2>&1
+md maintain\patched >nul 2>&1
 
 
 :: cleanup
@@ -34,7 +34,8 @@ for %%a in ("maintain\original\*.apk*") do (
 	:: uodate not needed?
 	for %%i in ("maintain\patched\*!patches:~8,-4%!*.apk") do (
 		echo APKs are up-to-date.
-		timeout /t 3 >nul 2>&1
+		echo.
+		pause
 		exit /b
 	)
 
