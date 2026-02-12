@@ -31,11 +31,10 @@ del /f /q morphe.zip.tmp* >nul 2>&1
 REM Check if any APK exists in maintain folder
 for %%a in ("maintain\original\*.apk*") do (
 
-	:: uodate not needed?
+	:: update not needed?
 	for %%i in ("maintain\patched\*!patches:~8,-4%!*.apk") do (
 		echo APKs are up-to-date.
-		echo.
-		pause
+		timeout /t 5 >nul 2>&1
 		exit /b
 	)
 
