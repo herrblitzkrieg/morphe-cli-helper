@@ -31,6 +31,7 @@ After installation, ensure `java` is accessible from your system `PATH`.
 2. Create a folder (e.g., `Morphe`)
 3. Place `morphe.cmd` inside that folder
 4. Run `morphe.cmd`
+5. (Optional) Download `maintainer.cmd` and place it there too.
 
 Required files will be downloaded automatically on first launch.
 
