@@ -19,17 +19,11 @@ md maintain\patched >nul 2>&1
 
 
 :: cleanup
-rd /s /q morphe-patched-temporary-files >nul 2>&1
-rd /s /q extractedapk >nul 2>&1
-rd /s /q extractedapkm >nul 2>&1
-del /f /q morphe.apk >nul 2>&1
-del /f /q morphe2.apk >nul 2>&1
-del /f /q morphe.zip >nul 2>&1
-del /f /q morphe.zip.tmp* >nul 2>&1
+call morphe.cmd cleanup
 	
 
 REM Check if any APK exists in maintain folder
-for %%a in ("maintain\original\*.apk*") do (
+for %%j in ("maintain\original\*.apk*") do (
 
 	:: update not needed?
 	for %%i in ("maintain\patched\*!patches:~8,-4%!*.apk") do (
@@ -41,33 +35,40 @@ for %%a in ("maintain\original\*.apk*") do (
 	:: update needed
 	rd /s /q maintain\patched >nul 2>&1
 	md maintain\patched >nul 2>&1
-	for /r maintain\original %%j in ("*.apk*") do (
-		set "apk=%%j"
-		call morphe.cmd !apk!
+	for /r maintain\original %%i in ("*.apk*") do (
+	
+		call morphe.cmd "%%i"
 		
-		java -jar "!apkeditor!" info -i "%%~dpnxj" > tmp.bin
+		java -jar "!apkeditor!" info -i "%%~dpnxi" > tmp.bin
 		for /f "tokens=1,2 delims==" %%k in (tmp.bin) do (
-			if /i "%%k"=="AppName" set "APPNAME=%%l"
-			if /i "%%k"=="VersionName" set "VERSIONNAME=%%l"
-			if /i "%%k"=="package" set "PACKAGENAME=%%l"
+			if /i "%%k"=="AppName" set "appname=%%l"
+			if /i "%%k"=="VersionName" set "versionname=%%l"
+			if /i "%%k"=="package" set "packagename=%%l"
 		)
-		set APPNAME=!APPNAME:"=!
-		set VERSIONNAME=!VERSIONNAME:"=!
-		set PACKAGENAME=!PACKAGENAME:"=!
+		set appname=!appname:"=!
+		set versionname=!versionname:"=!
+		set packagename=!packagename:"=!
 
-		REM !7z! l "%%~dpnxj" > tmp.bin
-		REM for /f "tokens=1,2 delims==" %%k in (tmp.bin) do (
-			REM if /i "%%k"=="AppName" set "APPNAME=%%l"
-			REM if /i "%%k"=="VersionName" set "VERSIONNAME=%%l"
-			REM if /i "%%k"=="package" set "PACKAGENAME=%%l"
-		REM )
-		REM set ABI=!APPNAME:"=!
 		del /f /q tmp.bin >nul 2>&1
 		
-		if not exist "maintain\patched\!APPNAME! v!VERSIONNAME! Morphe v!patches:~8,-4%!.apk" (
-			move /y "maintain\original\%%~nj-patched.apk" "maintain\patched\!APPNAME! v!VERSIONNAME! Morphe v!patches:~8,-4%!.apk"
+		if not exist "maintain\patched\!appname! v!versionname! Morphe v!patches:~8,-4%!.apk" (
+			move /y "maintain\original\%%~ni-patched.apk" ^
+			"maintain\patched\!appname! v!versionname! Morphe v!patches:~8,-4%!.apk" >nul 2>&1
 		) else (
-			move /y "maintain\original\%%~nj-patched.apk" "maintain\patched\!APPNAME! v!VERSIONNAME! Morphe v!patches:~8,-4%! (2).apk"
+			cls
+			echo Merging apk files... 
+			rd /s /q maintain\patched\merge >nul 2>&1
+			md maintain\patched\merge >nul 2>&1
+			move /y "maintain\patched\!appname! v!versionname! Morphe v!patches:~8,-4%!.apk" ^
+			"maintain\patched\merge\!appname! v!versionname! Morphe v!patches:~8,-4%!.apk" >nul 2>&1
+			move /y "maintain\original\%%~ni-patched.apk" ^
+			"maintain\patched\merge\!appname! v!versionname! Morphe v!patches:~8,-4%! (2).apk" >nul 2>&1
+			java -jar !apkeditor! m -i maintain\patched\merge >nul 2>&1
+			
+			call morphe.cmd sign "%~dp0maintain\patched\merge_merged.apk"
+			
+			ren "maintain\patched\merge_merged.apk" "!appname! v!versionname! Morphe v!patches:~8,-4%!.apk" >nul 2>&1
+			rd /s /q maintain\patched\merge >nul 2>&1
 		)
 		
 	)
