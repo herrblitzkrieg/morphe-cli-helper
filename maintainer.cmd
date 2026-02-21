@@ -3,6 +3,14 @@ setlocal EnableDelayedExpansion
 cd /d "%~dp0"
 
 
+if not exist morphe.cmd (
+	echo Downloading morphe.cmd
+	echo.
+	curl -L -f "https://raw.githubusercontent.com/herrblitzkrieg/morphe-cli-helper/main/morphe.cmd" -o tmp.bin || ( echo. & pause & exit )
+	ren tmp.bin morphe.cmd >nul 2>&1
+)
+
+
 :: update
 call morphe.cmd update
 

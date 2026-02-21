@@ -11,15 +11,11 @@ if "%~1"=="" 		call :update
 
 
 :: init
-cls
-for %%i in ("morphe-cli*.jar") do set cli=%%i
-for %%i in ("patches-*.mpp") do set patches=%%i
-for %%i in ("microg-*.apk") do set microg=%%i
-for %%i in ("APKEditor-*.jar") do set apkeditor=%%i
-set 7z="7z.exe"
+call :init
 
 
 :menu
+cls
 for %%i in ("%~1") do if /i "%%~xi"==".apk" set "apk=%%~fi"
 for %%i in ("%~1") do if /i "%%~xi"==".apkm" set "apk=%%~fi"
 if not "!apk!"=="" goto patch
@@ -28,6 +24,8 @@ echo CLI       : !cli!
 echo MICROG    : !microg!
 echo APKEDITOR : !apkeditor!
 echo 7Z        : !7z:~1,-1%!
+echo ZIPALIGN  : !zipalign:~1,-1%!
+echo APKSIGNER : !apksigner:~1,-1%!
 echo.
 java -version
 echo.
@@ -145,9 +143,25 @@ if not errorlevel 1 (
 		ren tmp.bin 7z.dll >nul 2>&1
 	)
 	
-		cls & exit /b
+	:: zipalign.exe update
+	if not exist zipalign.exe (
+		cls
+		echo Downloading 7z.exe
+		echo.
+		curl -L -f "https://raw.githubusercontent.com/herrblitzkrieg/morphe-cli-helper/main/7z.exe" -o tmp.bin || ( echo. & pause & exit )
+		ren tmp.bin 7z.exe >nul 2>&1
+	)
 	
-) else 	cls & exit /b 1
+	:: apksigner.jar update
+	if not exist apksigner.jar (
+		cls
+		echo Downloading apksigner.jar
+		echo.
+		curl -L -f "https://raw.githubusercontent.com/herrblitzkrieg/morphe-cli-helper/main/apksigner.jar" -o tmp.bin || ( echo. & pause & exit )
+		ren tmp.bin apksigner.jar >nul 2>&1
+	)
+	
+)
 :skipupdate
 cls & exit /b
 
@@ -239,6 +253,7 @@ cls & exit /b
 	
 	
 :sign
+	call :init
 	cls
 	echo Signing...
 	if not exist cli.keystore (
@@ -253,12 +268,12 @@ cls & exit /b
 		-keypass password ^
 		-dname "CN=Morphe,O=Dev,C=US" >nul 2>&1
 	)
-	zipalign -p -f 4 "%~1" "%~dpn1-aligned.apk" >nul 2>&1
+	!zipalign! -p -f 4 "%~1" "%~dpn1-aligned.apk" >nul 2>&1
 	move /y "%~dpn1-aligned.apk" "%~1" >nul 2>&1
 	ren "%~1" morphe.zip >nul 2>&1
 	!7z! d "%~dp1morphe.zip" META-INF/* META-INF >nul 2>&1
 	ren "%~dp1morphe.zip" "%~nx1" >nul 2>&1
-	java -jar apksigner.jar sign ^
+	java -jar !apksigner! sign ^
 	  --ks cli.keystore ^
 	  --ks-type PKCS12 ^
 	  --ks-key-alias morphe ^
@@ -270,4 +285,15 @@ cls & exit /b
 	  --v4-signing-enabled false ^
 	  "%~1" >nul 2>&1
 	cls
+	exit /b
+	
+	
+:init
+	for %%i in ("morphe-cli*.jar") do set cli=%%i
+	for %%i in ("patches-*.mpp") do set patches=%%i
+	for %%i in ("microg-*.apk") do set microg=%%i
+	for %%i in ("APKEditor-*.jar") do set apkeditor=%%i
+	set 7z="7z.exe"
+	set zipalign="zipalign.exe"
+	set apksigner="apksigner.jar"
 	exit /b
