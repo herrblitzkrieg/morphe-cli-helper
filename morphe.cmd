@@ -270,9 +270,9 @@ cls & exit /b
 	)
 	!zipalign! -p -f 4 "%~1" "%~dpn1-aligned.apk" >nul 2>&1
 	move /y "%~dpn1-aligned.apk" "%~1" >nul 2>&1
-	ren "%~1" morphe.zip >nul 2>&1
-	!7z! d "%~dp1morphe.zip" META-INF/* META-INF >nul 2>&1
-	ren "%~dp1morphe.zip" "%~nx1" >nul 2>&1
+	REM ren "%~1" morphe.zip >nul 2>&1
+	REM !7z! d "%~dp1morphe.zip" META-INF/* META-INF >nul 2>&1
+	REM ren "%~dp1morphe.zip" "%~nx1" >nul 2>&1
 	java -jar !apksigner! sign ^
 	  --ks cli.keystore ^
 	  --ks-type PKCS12 ^
