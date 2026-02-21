@@ -146,9 +146,9 @@ if not errorlevel 1 (
 	:: zipalign.exe update
 	if not exist zipalign.exe (
 		cls
-		echo Downloading 7z.exe
+		echo Downloading zipalign.exe
 		echo.
-		curl -L -f "https://raw.githubusercontent.com/herrblitzkrieg/morphe-cli-helper/main/7z.exe" -o tmp.bin || ( echo. & pause & exit )
+		curl -L -f "https://raw.githubusercontent.com/herrblitzkrieg/morphe-cli-helper/main/zipalign.exe" -o tmp.bin || ( echo. & pause & exit )
 		ren tmp.bin 7z.exe >nul 2>&1
 	)
 	
