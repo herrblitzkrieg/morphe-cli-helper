@@ -149,7 +149,7 @@ if not errorlevel 1 (
 		echo Downloading zipalign.exe
 		echo.
 		curl -L -f "https://raw.githubusercontent.com/herrblitzkrieg/morphe-cli-helper/main/zipalign.exe" -o tmp.bin || ( echo. & pause & exit )
-		ren tmp.bin 7z.exe >nul 2>&1
+		ren tmp.bin zipalign.exe >nul 2>&1
 	)
 	
 	:: apksigner.jar update
