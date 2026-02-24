@@ -189,9 +189,8 @@ exit /b
 	echo.
 	
 	:: set patch specific options below
-	java -jar !cli! patch -p !patches! ^
+	java -jar !cli! patch -p !patches! -f --unsigned -t tmp ^
 		-e "Theme" -OdarkThemeBackgroundColor=@android:color/system_neutral1_900 -OlightThemeBackgroundColor=@android:color/white ^
-		-f --unsigned ^
 	morphe.apk
 	echo.
 	
@@ -199,11 +198,11 @@ exit /b
 	
 	:: spoof version code to 2147483647
 	echo Spoofing app version
+	call :cleanup silent
 	java -jar !apkeditor! d -i "%~dp0morphe-patched.apk" -o tmp -t xml -dex >nul 2>&1
 	powershell -Command "(Get-Content tmp\AndroidManifest.xml) -replace 'android:versionCode=\"\d+\"','android:versionCode=\"2147483647\"' | Set-Content tmp\AndroidManifest.xml" >nul 2>&1
 	del /f /q "%~dp0morphe-patched.apk" >nul 2>&1
 	java -jar !apkeditor! b -i tmp -o "%~dp0morphe-patched.apk" >nul 2>&1
-	
 	call :sign "%~dp0morphe-patched.apk"
 	
 	del /f /q morphe.apk >nul 2>&1
@@ -230,7 +229,6 @@ exit /b
 	
 	
 :cleanup
-	rd /s /q morphe-patched-temporary-files >nul 2>&1
 	rd /s /q tmp >nul 2>&1
 	del /f /q merge*.apk >nul 2>&1
 	del /f /q morphe.apk >nul 2>&1
