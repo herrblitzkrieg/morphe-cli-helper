@@ -7,8 +7,8 @@ if not exist morphe.cmd (
 	echo Downloading morphe.cmd
 	echo.
 	curl -L -f "https://raw.githubusercontent.com/herrblitzkrieg/morphe-cli-helper/main/morphe.cmd" -o tmp.bin || ( echo. & pause & exit )
-	ren tmp.bin morphe.cmd >nul 2>&1
-	cls
+	echo.
+	move /y tmp.bin morphe.cmd >nul 2>&1
 )
 
 
@@ -28,7 +28,7 @@ md maintain\patched >nul 2>&1
 
 
 :: cleanup
-call morphe.cmd cleanup
+call morphe.cmd cleanup "silent"
 	
 
 REM Check if any APK exists in maintain folder
@@ -36,8 +36,10 @@ for %%j in ("maintain\original\*.apk*") do (
 
 	:: update not needed?
 	for %%i in ("maintain\patched\*!patches:~8,-4%!*.apk") do (
+		echo.
 		echo APKs are up-to-date.
-		timeout /t 5 >nul 2>&1
+		echo.
+		pause
 		exit /b
 	)
 
@@ -48,7 +50,7 @@ for %%j in ("maintain\original\*.apk*") do (
 	
 		call morphe.cmd "%%i"
 		
-		java -jar "!apkeditor!" info -i "%%~dpnxi" > tmp.bin
+		java -jar "!apkeditor!" info -i "%%~dpni-patched.apk" > tmp.bin
 		for /f "tokens=1,2 delims==" %%k in (tmp.bin) do (
 			if /i "%%k"=="AppName" set "appname=%%l"
 			if /i "%%k"=="VersionName" set "versionname=%%l"
@@ -64,23 +66,25 @@ for %%j in ("maintain\original\*.apk*") do (
 			move /y "maintain\original\%%~ni-patched.apk" ^
 			"maintain\patched\!appname! v!versionname! Morphe v!patches:~8,-4%!.apk" >nul 2>&1
 		) else (
-			cls
-			echo Merging apk files... 
+			echo.
+			echo Merging 2 apks with same package name into one single apk 
 			rd /s /q maintain\patched\merge >nul 2>&1
 			md maintain\patched\merge >nul 2>&1
 			move /y "maintain\patched\!appname! v!versionname! Morphe v!patches:~8,-4%!.apk" ^
 			"maintain\patched\merge\!appname! v!versionname! Morphe v!patches:~8,-4%!.apk" >nul 2>&1
 			move /y "maintain\original\%%~ni-patched.apk" ^
 			"maintain\patched\merge\!appname! v!versionname! Morphe v!patches:~8,-4%! (2).apk" >nul 2>&1
-			java -jar !apkeditor! m -i maintain\patched\merge >nul 2>&1
+			java -jar !apkeditor! m -i maintain\patched\merge -clean-meta -extractNativeLibs false -vrd >nul 2>&1
 			
 			call morphe.cmd sign "%~dp0maintain\patched\merge_merged.apk"
 			
-			ren "maintain\patched\merge_merged.apk" "!appname! v!versionname! Morphe v!patches:~8,-4%!.apk" >nul 2>&1
+			move /y "maintain\patched\merge_merged.apk" "maintain\patched\!appname! v!versionname! Morphe v!patches:~8,-4%!.apk" >nul 2>&1
 			rd /s /q maintain\patched\merge >nul 2>&1
 		)
 		
+		cls
 	)
+	call morphe.cmd cleanup "silent"
 	explorer.exe maintain\patched
 	exit /b
 
