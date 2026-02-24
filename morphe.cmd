@@ -55,7 +55,7 @@ echo Unknown command, sorry :( & echo. & pause & goto menu
 
 :update
 del /f /q tmp.bin >nul 2>&1
-goto skipupdate
+REM goto skipupdate
 ping -n 1 1.1.1.1 >nul
 if not errorlevel 1 (
 
@@ -115,29 +115,12 @@ if not errorlevel 1 (
 	') do set url=%%i
 	for %%f in ("!url!") do set filename=%%~nxf
 	if not exist "!filename!" (
-		echo.
 		echo Downloading !filename!
 		echo.
 		curl -L -f "!url!" -o tmp.bin || ( echo. & pause & exit )
 		del /f /q "APKEditor-*.jar" >nul 2>&1
 		move /y tmp.bin "!filename!" >nul 2>&1
 	)
-	
-	REM :: Apktool update
-	REM echo Checking for Apktool update
-	REM for /f "delims=" %%i in ('
-	  REM powershell -NoProfile -Command ^
-	  REM "(Invoke-RestMethod https://api.github.com/repos/iBotPeaches/Apktool/releases/latest).assets | Where-Object {$_.name -like '*.jar'} | Select-Object -Expand browser_download_url"
-	REM ') do set url=%%i
-	REM for %%f in ("!url!") do set filename=%%~nxf
-	REM if not exist "!filename!" (
-		REM echo Downloading !filename!
-		REM echo.
-		REM curl -L -f "!url!" -o tmp.bin || ( echo. & pause & exit )
-		REM echo.
-		REM del /f /q "apktool*.jar" >nul 2>&1
-		REM move /y tmp.bin "!filename!" >nul 2>&1
-	REM )
 	
 	:: 7z.exe update
 	if not exist 7z.exe	(
@@ -188,11 +171,10 @@ exit /b
 		if /i "%%~xi"==".apkm" (
 			echo Converting splits into a single apk file
 			mklink /h morphe.zip %%i >nul 2>&1 || copy /y %%i morphe.zip >nul 2>&1
-			rd /s /q extractedapkm >nul 2>&1
-			!7z! x morphe.zip -oextractedapkm >nul 2>&1
-			java -jar !apkeditor! m -i extractedapkm -o morphe.apk -clean-meta -extractNativeLibs false -vrd >nul 2>&1
+			!7z! x morphe.zip -otmp >nul 2>&1
+			java -jar !apkeditor! m -i tmp -o morphe.apk -clean-meta -extractNativeLibs false -vrd >nul 2>&1
 			del /f /q morphe.zip >nul 2>&1
-			rd /s /q extractedapkm >nul 2>&1
+			rd /s /q tmp >nul 2>&1
 		) else (
 		mklink /h morphe.apk %%i >nul 2>&1 || copy /y %%i morphe.apk >nul 2>&1
 		)
@@ -211,9 +193,17 @@ exit /b
 		-e "Theme" -OdarkThemeBackgroundColor=@android:color/system_neutral1_900 -OlightThemeBackgroundColor=@android:color/white ^
 		-f --unsigned ^
 	morphe.apk
-	
 	echo.
-	if not exist "%~dp0morphe-patched.apk" pause
+	
+	if not exist "%~dp0morphe-patched.apk" pause & call :cleanup silent & exit /b
+	
+	:: spoof version code to 2147483647
+	echo Spoofing app version
+	java -jar !apkeditor! d -i "%~dp0morphe-patched.apk" -o tmp -t xml -dex >nul 2>&1
+	powershell -Command "(Get-Content tmp\AndroidManifest.xml) -replace 'android:versionCode=\"\d+\"','android:versionCode=\"2147483647\"' | Set-Content tmp\AndroidManifest.xml" >nul 2>&1
+	del /f /q "%~dp0morphe-patched.apk" >nul 2>&1
+	java -jar !apkeditor! b -i tmp -o "%~dp0morphe-patched.apk" >nul 2>&1
+	
 	call :sign "%~dp0morphe-patched.apk"
 	
 	del /f /q morphe.apk >nul 2>&1
@@ -241,8 +231,7 @@ exit /b
 	
 :cleanup
 	rd /s /q morphe-patched-temporary-files >nul 2>&1
-	rd /s /q extractedapk >nul 2>&1
-	rd /s /q extractedapkm >nul 2>&1
+	rd /s /q tmp >nul 2>&1
 	del /f /q merge*.apk >nul 2>&1
 	del /f /q morphe.apk >nul 2>&1
 	del /f /q morphe2.apk >nul 2>&1
@@ -295,7 +284,6 @@ exit /b
 	for %%i in ("patches-*.mpp") do set patches=%%i
 	for %%i in ("microg-*.apk") do set microg=%%i
 	for %%i in ("APKEditor-*.jar") do set apkeditor=%%i
-	for %%i in ("apktool*.jar") do set apktool=%%i
 	set 7z=7z.exe
 	set zipalign=zipalign.exe
 	set apksigner=apksigner.jar

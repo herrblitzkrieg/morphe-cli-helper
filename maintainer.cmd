@@ -9,6 +9,7 @@ if not exist morphe.cmd (
 	curl -L -f "https://raw.githubusercontent.com/herrblitzkrieg/morphe-cli-helper/main/morphe.cmd" -o tmp.bin || ( echo. & pause & exit )
 	echo.
 	move /y tmp.bin morphe.cmd >nul 2>&1
+	cls
 )
 
 
@@ -66,7 +67,6 @@ for %%j in ("maintain\original\*.apk*") do (
 			move /y "maintain\original\%%~ni-patched.apk" ^
 			"maintain\patched\!appname! v!versionname! Morphe v!patches:~8,-4%!.apk" >nul 2>&1
 		) else (
-			echo.
 			echo Merging 2 apks with same package name into one single apk 
 			rd /s /q maintain\patched\merge >nul 2>&1
 			md maintain\patched\merge >nul 2>&1
@@ -85,6 +85,8 @@ for %%j in ("maintain\original\*.apk*") do (
 		cls
 	)
 	call morphe.cmd cleanup "silent"
+	del /f /q "maintain\patched\microg-*.apk" >nul 2>&1
+	mklink /h "maintain\patched\!microg!" "!microg!" >nul 2>&1
 	explorer.exe maintain\patched
 	exit /b
 
