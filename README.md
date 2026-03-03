@@ -18,8 +18,8 @@ This project simplifies the setup and usage of Morphe CLI by automating dependen
 
 Before using this tool, install:
 
-- **Azul Zulu JRE 11 (x64)**  
-  https://www.azul.com/downloads/?version=java-11-lts&os=windows&architecture=x86-64-bit&package=jre#zulu
+- **Azul Zulu JRE 25 (x64)**  
+  https://www.azul.com/downloads/?version=java-25-lts&os=windows&architecture=x86-64-bit&package=jre#zulu
 
 After installation, ensure `java` is accessible from your system `PATH`.
 

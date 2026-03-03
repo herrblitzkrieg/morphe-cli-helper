@@ -91,3 +91,8 @@ for %%j in ("maintain\original\*.apk*") do (
 	exit /b
 
 )
+echo.
+echo No APKs found in maintain/original folder.
+echo.
+pause
+exit /b

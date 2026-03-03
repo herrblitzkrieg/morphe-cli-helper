@@ -176,7 +176,8 @@ exit /b
 			del /f /q morphe.zip >nul 2>&1
 			rd /s /q tmp >nul 2>&1
 		) else (
-		mklink /h morphe.apk %%i >nul 2>&1 || copy /y %%i morphe.apk >nul 2>&1
+		REM mklink /h morphe.apk %%i >nul 2>&1 || copy /y %%i morphe.apk >nul 2>&1
+		copy /y %%i morphe.apk >nul 2>&1
 		)
 	)
 	
@@ -221,7 +222,7 @@ exit /b
 
 
 :list
-	java -jar !cli! list-patches --with-packages --with-versions --with-options !patches!
+	java -jar !cli! list-patches --with-packages --with-versions --with-options --patches !patches!
 	echo.
 	pause
 	cls
@@ -236,6 +237,8 @@ exit /b
 	del /f /q morphe.zip >nul 2>&1
 	del /f /q morphe.zip.tmp* >nul 2>&1
 	del /f /q *.idsig >nul 2>&1
+	rd /s /q maintain\patched\merge >nul 2>&1
+	del /f /q maintain\patched\merge_merged.apk >nul 2>&1
 	if not "%~1"=="silent" (
 	cls
 	echo Cleaning completed.
