@@ -51,6 +51,8 @@ for %%j in ("maintain\original\*.apk*") do (
 	
 		call morphe.cmd "%%i"
 		
+		if not exist "%%~dpni-patched.apk" call morphe.cmd cleanup "silent" & del /f /q "maintain\patched\*.apk" & exit
+		
 		java -jar "!apkeditor!" info -i "%%~dpni-patched.apk" > tmp.bin
 		for /f "tokens=1,2 delims==" %%k in (tmp.bin) do (
 			if /i "%%k"=="AppName" set "appname=%%l"

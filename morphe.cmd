@@ -4,9 +4,9 @@ cd /d "%~dp0"
 
 
 :: parameters
-if "%~1"=="update"	call :update & exit /b
-if "%~1"=="sign"	call :sign "%~2" & exit /b
-if "%~1"=="cleanup"	call :cleanup silent & exit /b
+if "%~1"=="update" call :update & exit /b
+if "%~1"=="sign" call :sign "%~2" & exit /b
+if "%~1"=="cleanup" call :cleanup silent & exit /b
 for %%i in ("%~1") do if /i "%%~xi"==".apk" set "apk=%%~fi" & goto patch
 for %%i in ("%~1") do if /i "%%~xi"==".apkm" set "apk=%%~fi" & goto patch
 
@@ -31,7 +31,8 @@ java -version
 echo.
 echo.
 echo Available commands:
-echo patch, list, cleanup, exit
+echo patch, list, cleanup, exit, reset
+echo.
 echo.
 set /p command=">> "
 cls
@@ -50,6 +51,9 @@ if "!command!" == "3" call :cleanup & goto menu
 if "!command!" == "exit" exit /b
 if "!command!" == "e" exit /b
 if "!command!" == "4" exit /b
+if "!command!" == "reset" call :reset & goto menu
+if "!command!" == "r" call :reset & goto menu
+if "!command!" == "5" call :reset & goto menu
 echo Unknown command, sorry :( & echo. & pause & goto menu
 
 
@@ -59,69 +63,23 @@ REM goto skipupdate
 ping -n 1 1.1.1.1 >nul
 if not errorlevel 1 (
 
-	:: cli update
-	echo Checking for Morphe cli update
-	for /f "delims=" %%i in ('
-	  powershell -NoProfile -Command ^
-	  "(Invoke-RestMethod https://api.github.com/repos/MorpheApp/morphe-cli/releases).Where({$_.prerelease})[0].assets | Where-Object {$_.name -like '*.jar'} | Select-Object -Expand browser_download_url"
-	') do set url=%%i
-	for %%f in ("!url!") do set filename=%%~nxf
-	if not exist "!filename!" (
-		echo Downloading !filename!
-		echo.
-		curl -L -f "!url!" -o tmp.bin || ( echo. & pause & exit )
-		echo.
-		del /f /q "morphe-cli*.jar" >nul 2>&1
-		move /y tmp.bin "!filename!" >nul 2>&1
+	REM --- Query GitHub rate limit ---
+	for /f "tokens=2 delims=:" %%A in ('
+	  curl -s https://api.github.com/rate_limit ^| findstr /i "\"remaining\""
+	') do (
+	  set "remain=%%A"
+	  goto :got
 	)
 
-	:: patches update
-	echo Checking for Morphe patches update
-	for /f "delims=" %%i in ('
-	  powershell -NoProfile -Command ^
-	  "(Invoke-RestMethod https://api.github.com/repos/MorpheApp/morphe-patches/releases).Where({$_.prerelease})[0].assets | Where-Object {$_.name -like '*.mpp'} | Select-Object -Expand browser_download_url"
-	') do set url=%%i
-	for %%f in ("!url!") do set filename=%%~nxf
-	if not exist "!filename!" (
-		echo Downloading !filename!
-		echo.
-		curl -L -f "!url!" -o tmp.bin || ( echo. & pause & exit )
-		echo.
-		del /f /q "patches-*.mpp" >nul 2>&1
-		move /y tmp.bin "!filename!" >nul 2>&1
-	)
+	:got
+	REM remove spaces and commas
+	set "remain=%remain: =%"
+	set "remain=%remain:,=%"
 
-	:: MicroG-RE update
-	echo Checking for MicroG-RE update
-	for /f "delims=" %%i in ('
-	  powershell -NoProfile -Command ^
-	  "(Invoke-RestMethod https://api.github.com/repos/MorpheApp/MicroG-RE/releases/latest).assets | Where-Object {$_.name -like '*.apk'} | Select-Object -Expand browser_download_url"
-	') do set url=%%i
-	for %%f in ("!url!") do set filename=%%~nxf
-	if not exist "!filename!" (
-		echo Downloading !filename!
-		echo.
-		curl -L -f "!url!" -o tmp.bin || ( echo. & pause & exit )
-		echo.
-		del /f /q "microg-*.apk" >nul 2>&1
-		move /y tmp.bin "!filename!" >nul 2>&1
-	)
+	REM --- Check limit ---
+	if "%remain%"=="0" ( echo GitHub API limit reached. Try again later. & echo. & pause & exit )
+	echo API OK, remaining calls: %remain%
 
-	:: APKEditor update
-	echo Checking for APKEditor update
-	for /f "delims=" %%i in ('
-	  powershell -NoProfile -Command ^
-	  "(Invoke-RestMethod https://api.github.com/repos/REAndroid/APKEditor/releases/latest).assets | Where-Object {$_.name -like '*.jar'} | Select-Object -Expand browser_download_url"
-	') do set url=%%i
-	for %%f in ("!url!") do set filename=%%~nxf
-	if not exist "!filename!" (
-		echo Downloading !filename!
-		echo.
-		curl -L -f "!url!" -o tmp.bin || ( echo. & pause & exit )
-		del /f /q "APKEditor-*.jar" >nul 2>&1
-		move /y tmp.bin "!filename!" >nul 2>&1
-	)
-	
 	:: 7z.exe update
 	if not exist 7z.exe	(
 		echo Downloading 7z.exe
@@ -137,12 +95,99 @@ if not errorlevel 1 (
 		echo.
 		move /y tmp.bin 7z.dll >nul 2>&1
 	)
+
+	:: aria2c update
+	echo Checking for aria2c update
+	for /f "delims=" %%i in ('
+	  powershell -NoProfile -Command ^
+	  "(Invoke-RestMethod https://api.github.com/repos/aria2/aria2/releases/latest).assets | Where-Object {$_.name -like '*64bit*.zip'} | Select-Object -Expand browser_download_url"
+	') do set url=%%i
+	for %%f in ("!url!") do set filename=%%~nf.exe
+	if not exist "!filename!" (
+		echo Downloading !filename!
+		echo.
+		curl -L -f "!url!" -o tmp.bin || ( echo. & pause & exit )
+		echo.
+		del /f /q "aria2*.exe" >nul 2>&1
+		move /y tmp.bin tmp.zip >nul 2>&1
+		7z.exe e tmp.zip aria2c.exe -r >nul 2>&1
+		move /y aria2c.exe "!filename!" >nul 2>&1
+		del /f /q tmp.zip >nul 2>&1
+	)
+
+	:: cli update
+	echo Checking for Morphe cli update
+	for /f "delims=" %%i in ('
+	  powershell -NoProfile -Command ^
+	  "(Invoke-RestMethod https://api.github.com/repos/MorpheApp/morphe-cli/releases).Where({$_.prerelease})[0].assets | Where-Object {$_.name -like '*.jar'} | Select-Object -Expand browser_download_url"
+	') do set url=%%i
+	for %%f in ("!url!") do set filename=%%~nxf
+	if not exist "!filename!" (
+		echo Downloading !filename!
+		echo.
+		REM curl -L -f "!url!" -o tmp.bin || ( echo. & pause & exit )
+		call :aria2c "!url!" || ( echo. & pause & exit )
+		echo.
+		del /f /q "morphe-cli*.jar" >nul 2>&1
+		move /y tmp.bin "!filename!" >nul 2>&1
+	)
+
+	:: patches update
+	echo Checking for Morphe patches update
+	for /f "delims=" %%i in ('
+	  powershell -NoProfile -Command ^
+	  "(Invoke-RestMethod https://api.github.com/repos/MorpheApp/morphe-patches/releases).Where({$_.prerelease})[0].assets | Where-Object {$_.name -like '*.mpp'} | Select-Object -Expand browser_download_url"
+	') do set url=%%i
+	for %%f in ("!url!") do set filename=%%~nxf
+	if not exist "!filename!" (
+		echo Downloading !filename!
+		echo.
+		REM curl -L -f "!url!" -o tmp.bin || ( echo. & pause & exit )
+		call :aria2c "!url!" || ( echo. & pause & exit )
+		echo.
+		del /f /q "patches-*.mpp" >nul 2>&1
+		move /y tmp.bin "!filename!" >nul 2>&1
+	)
+
+	:: MicroG-RE update
+	echo Checking for MicroG-RE update
+	for /f "delims=" %%i in ('
+	  powershell -NoProfile -Command ^
+	  "(Invoke-RestMethod https://api.github.com/repos/MorpheApp/MicroG-RE/releases/latest).assets | Where-Object {$_.name -like '*.apk'} | Select-Object -Expand browser_download_url"
+	') do set url=%%i
+	for %%f in ("!url!") do set filename=%%~nxf
+	if not exist "!filename!" (
+		echo Downloading !filename!
+		echo.
+		REM curl -L -f "!url!" -o tmp.bin || ( echo. & pause & exit )
+		call :aria2c "!url!" || ( echo. & pause & exit )
+		echo.
+		del /f /q "microg-*.apk" >nul 2>&1
+		move /y tmp.bin "!filename!" >nul 2>&1
+	)
+
+	:: APKEditor update
+	echo Checking for APKEditor update
+	for /f "delims=" %%i in ('
+	  powershell -NoProfile -Command ^
+	  "(Invoke-RestMethod https://api.github.com/repos/REAndroid/APKEditor/releases/latest).assets | Where-Object {$_.name -like '*.jar'} | Select-Object -Expand browser_download_url"
+	') do set url=%%i
+	for %%f in ("!url!") do set filename=%%~nxf
+	if not exist "!filename!" (
+		echo Downloading !filename!
+		echo.
+		REM curl -L -f "!url!" -o tmp.bin || ( echo. & pause & exit )
+		call :aria2c "!url!" || ( echo. & pause & exit )
+		del /f /q "APKEditor-*.jar" >nul 2>&1
+		move /y tmp.bin "!filename!" >nul 2>&1
+	)
 	
 	:: zipalign.exe update
 	if not exist zipalign.exe (
 		echo Downloading zipalign.exe
 		echo.
-		curl -L -f "https://raw.githubusercontent.com/herrblitzkrieg/morphe-cli-helper/main/zipalign.exe" -o tmp.bin || ( echo. & pause & exit )
+		REM curl -L -f "https://raw.githubusercontent.com/herrblitzkrieg/morphe-cli-helper/main/zipalign.exe" -o tmp.bin || ( echo. & pause & exit )
+		call :aria2c "https://raw.githubusercontent.com/herrblitzkrieg/morphe-cli-helper/main/zipalign.exe" || ( echo. & pause & exit )
 		echo.
 		move /y tmp.bin zipalign.exe >nul 2>&1
 	)
@@ -151,7 +196,8 @@ if not errorlevel 1 (
 	if not exist apksigner.jar (
 		echo Downloading apksigner.jar
 		echo.
-		curl -L -f "https://raw.githubusercontent.com/herrblitzkrieg/morphe-cli-helper/main/apksigner.jar" -o tmp.bin || ( echo. & pause & exit )
+		REM curl -L -f "https://raw.githubusercontent.com/herrblitzkrieg/morphe-cli-helper/main/apksigner.jar" -o tmp.bin || ( echo. & pause & exit )
+		call :aria2c "https://raw.githubusercontent.com/herrblitzkrieg/morphe-cli-helper/main/apksigner.jar" || ( echo. & pause & exit )
 		echo.
 		move /y tmp.bin apksigner.jar >nul 2>&1
 	)
@@ -165,9 +211,11 @@ exit /b
 	call :cleanup silent
 	call :init
 
-	if "!apk!"=="" ( cls & set /p apk="Paste APK file path (.apk, .apkm): " & echo. )
+	if "!apk!"=="" ( cls & set /p apk="Paste APK file path (.apk, .apkm): " & cls)
 	del /f /q morphe.apk >nul 2>&1
 	for %%i in ("!apk!") do (
+		echo Processing %%~nxi
+		echo.
 		if /i "%%~xi"==".apkm" (
 			echo Converting splits into a single apk file
 			mklink /h morphe.zip %%i >nul 2>&1 || copy /y %%i morphe.zip >nul 2>&1
@@ -175,6 +223,7 @@ exit /b
 			java -jar !apkeditor! m -i tmp -o morphe.apk -clean-meta -extractNativeLibs false -vrd >nul 2>&1
 			del /f /q morphe.zip >nul 2>&1
 			rd /s /q tmp >nul 2>&1
+			if not exist "%~dp0morphe.apk" ( echo Conversion failed & echo. & pause & call :cleanup silent & exit /b )
 		) else (
 		REM mklink /h morphe.apk %%i >nul 2>&1 || copy /y %%i morphe.apk >nul 2>&1
 		copy /y %%i morphe.apk >nul 2>&1
@@ -187,24 +236,30 @@ exit /b
 	!7z! d morphe.zip lib/x86/* lib/x86_64/* lib/x86 lib/x86_64 >nul 2>&1
 	del /f /q morphe.zip.tmp >nul 2>&1
 	move /y morphe.zip morphe.apk >nul 2>&1
+	if not exist "%~dp0morphe.apk" ( echo Removing exotic libs failed & echo. & pause & call :cleanup silent & exit /b )
 	echo.
 	
 	:: set patch specific options below
 	java -jar !cli! patch -p !patches! -f --unsigned -t tmp ^
 		-e "Theme" -OdarkThemeBackgroundColor=@android:color/system_neutral1_900 -OlightThemeBackgroundColor=@android:color/white ^
+		-e "Disable Play Store updates" ^
 	morphe.apk
+	if not exist "%~dp0morphe-patched.apk" ( echo. & echo Morphe patcher failed & echo. & pause & call :cleanup silent & exit /b )
 	echo.
 	
-	if not exist "%~dp0morphe-patched.apk" pause & call :cleanup silent & exit /b
+	REM :: spoof version code to 2147483647
+	REM echo Spoofing app version
+	REM REM call :cleanup silent
+	REM rd /s /q tmp >nul 2>&1
+	REM java -jar !apkeditor! d -i "%~dp0morphe-patched.apk" -o tmp -t xml -dex >nul 2>&1
+	REM powershell -Command "(Get-Content tmp\AndroidManifest.xml) -replace 'android:versionCode=\"\d+\"','android:versionCode=\"2147483647\"' | Set-Content tmp\AndroidManifest.xml" >nul 2>&1
+	REM del /f /q "%~dp0morphe-patched.apk" >nul 2>&1
+	REM java -jar !apkeditor! b -i tmp -o "%~dp0morphe-patched.apk" >nul 2>&1
+	REM if not exist "%~dp0morphe-patched.apk" ( echo Spoofing failed & echo. & pause & call :cleanup silent & exit /b )
 	
-	:: spoof version code to 2147483647
-	echo Spoofing app version
-	call :cleanup silent
-	java -jar !apkeditor! d -i "%~dp0morphe-patched.apk" -o tmp -t xml -dex >nul 2>&1
-	powershell -Command "(Get-Content tmp\AndroidManifest.xml) -replace 'android:versionCode=\"\d+\"','android:versionCode=\"2147483647\"' | Set-Content tmp\AndroidManifest.xml" >nul 2>&1
-	del /f /q "%~dp0morphe-patched.apk" >nul 2>&1
-	java -jar !apkeditor! b -i tmp -o "%~dp0morphe-patched.apk" >nul 2>&1
+	:: sign
 	call :sign "%~dp0morphe-patched.apk"
+	if not exist "%~dp0morphe-patched.apk" ( echo Signing failed & echo. & pause & call :cleanup silent & exit /b )
 	
 	del /f /q morphe.apk >nul 2>&1
 	for %%i in ("!apk!") do (
@@ -234,9 +289,12 @@ exit /b
 	del /f /q merge*.apk >nul 2>&1
 	del /f /q morphe.apk >nul 2>&1
 	del /f /q morphe2.apk >nul 2>&1
+	del /f /q morphe-patched.apk >nul 2>&1
 	del /f /q morphe.zip >nul 2>&1
 	del /f /q morphe.zip.tmp* >nul 2>&1
 	del /f /q *.idsig >nul 2>&1
+	del /f /q tmp.bin >nul 2>&1
+	REM del /f /q tmp.bin.* >nul 2>&1
 	rd /s /q maintain\patched\merge >nul 2>&1
 	del /f /q maintain\patched\merge_merged.apk >nul 2>&1
 	if not "%~1"=="silent" (
@@ -245,6 +303,20 @@ exit /b
 	echo.
 	pause
 	)
+	exit /b
+	
+	
+:reset
+	call :cleanup silent
+	del /f /q *.jar >nul 2>&1
+	del /f /q *.exe >nul 2>&1
+	del /f /q *.dll >nul 2>&1
+	del /f /q *.apk >nul 2>&1
+	del /f /q *.mpp >nul 2>&1
+	cls
+	echo Reset completed.
+	echo.
+	pause
 	exit /b
 	
 	
@@ -289,3 +361,21 @@ exit /b
 	set zipalign=zipalign.exe
 	set apksigner=apksigner.jar
 	exit /b
+	
+
+:aria2c
+	for %%i in ("aria2*.exe") do set aria2c=%%i
+	!aria2c! ^
+		-x 16 ^
+		-s 16 ^
+		-k 1M ^
+		-c ^
+		--max-tries=5 ^
+		--retry-wait=5 ^
+		--console-log-level=warn ^
+		--summary-interval=0 ^
+		--download-result=hide ^
+		--auto-file-renaming=false ^
+		-o tmp.bin ^
+		"%~1"
+	exit /b %errorlevel%
