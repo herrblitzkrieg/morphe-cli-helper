@@ -223,7 +223,7 @@ exit /b
 			java -jar !apkeditor! m -i tmp -o morphe.apk -clean-meta -extractNativeLibs false -vrd >nul 2>&1
 			del /f /q morphe.zip >nul 2>&1
 			rd /s /q tmp >nul 2>&1
-			if not exist "%~dp0morphe.apk" ( echo Conversion failed & echo. & pause & call :cleanup silent & exit /b )
+			if not exist "%~dp0morphe.apk" ( echo Conversion failed & echo. & pause & call :cleanup silent & exit /b 1)
 		) else (
 		REM mklink /h morphe.apk %%i >nul 2>&1 || copy /y %%i morphe.apk >nul 2>&1
 		copy /y %%i morphe.apk >nul 2>&1
@@ -236,7 +236,7 @@ exit /b
 	!7z! d morphe.zip lib/x86/* lib/x86_64/* lib/x86 lib/x86_64 >nul 2>&1
 	del /f /q morphe.zip.tmp >nul 2>&1
 	move /y morphe.zip morphe.apk >nul 2>&1
-	if not exist "%~dp0morphe.apk" ( echo Removing exotic libs failed & echo. & pause & call :cleanup silent & exit /b )
+	if not exist "%~dp0morphe.apk" ( echo Removing exotic libs failed & echo. & pause & call :cleanup silent & exit /b 1)
 	echo.
 	
 	:: set patch specific options below
@@ -244,7 +244,7 @@ exit /b
 		-e "Theme" -OdarkThemeBackgroundColor=@android:color/system_neutral1_900 -OlightThemeBackgroundColor=@android:color/white ^
 		-e "Disable Play Store updates" ^
 	morphe.apk
-	if not exist "%~dp0morphe-patched.apk" ( echo. & echo Morphe patcher failed & echo. & pause & call :cleanup silent & exit /b )
+	if not exist "%~dp0morphe-patched.apk" ( echo. & echo Morphe patcher failed & echo. & pause & call :cleanup silent & exit /b 1)
 	echo.
 	
 	REM :: spoof version code to 2147483647
@@ -255,11 +255,11 @@ exit /b
 	REM powershell -Command "(Get-Content tmp\AndroidManifest.xml) -replace 'android:versionCode=\"\d+\"','android:versionCode=\"2147483647\"' | Set-Content tmp\AndroidManifest.xml" >nul 2>&1
 	REM del /f /q "%~dp0morphe-patched.apk" >nul 2>&1
 	REM java -jar !apkeditor! b -i tmp -o "%~dp0morphe-patched.apk" >nul 2>&1
-	REM if not exist "%~dp0morphe-patched.apk" ( echo Spoofing failed & echo. & pause & call :cleanup silent & exit /b )
+	REM if not exist "%~dp0morphe-patched.apk" ( echo Spoofing failed & echo. & pause & call :cleanup silent & exit /b 1)
 	
 	:: sign
 	call :sign "%~dp0morphe-patched.apk"
-	if not exist "%~dp0morphe-patched.apk" ( echo Signing failed & echo. & pause & call :cleanup silent & exit /b )
+	if not exist "%~dp0morphe-patched.apk" ( echo Signing failed & echo. & pause & call :cleanup silent & exit /b 1)
 	
 	del /f /q morphe.apk >nul 2>&1
 	for %%i in ("!apk!") do (
@@ -277,8 +277,22 @@ exit /b
 
 
 :list
-	java -jar !cli! list-patches --with-packages --with-versions --with-options --patches !patches!
+	java -jar !cli! list-patches --with-packages --with-versions --with-options --patches !patches! > tmp.bin
+	type tmp.bin
 	echo.
+	echo.
+	echo Latest supported apk versions:
+	echo.
+	echo Youtube
+	powershell -NoProfile -ExecutionPolicy Bypass -Command "$c = Get-Content '%~dp0tmp.bin' -Raw; if ($c -match 'com\.google\.android\.youtube\s*Compatible versions:\r?\n\s*(\d+\.\d+\.\d+)') { $matches[1] }"
+	echo.
+	echo YTMusic
+	powershell -NoProfile -ExecutionPolicy Bypass -Command "$c = Get-Content '%~dp0tmp.bin' -Raw; if ($c -match 'com\.google\.android\.apps\.youtube\.music\s*Compatible versions:\r?\n\s*(\d+\.\d+\.\d+)') { $matches[1] }"
+	echo.
+	echo Reddit
+	powershell -NoProfile -ExecutionPolicy Bypass -Command "$c = Get-Content '%~dp0tmp.bin' -Raw; if ($c -match 'com\.reddit\.frontpage\s*Compatible versions:\r?\n\s*(\d+\.\d+\.\d+)') { $matches[1] }"
+	echo.
+	del /f /q tmp.bin >nul 2>&1
 	pause
 	cls
 	exit /b
@@ -293,7 +307,6 @@ exit /b
 	del /f /q morphe.zip >nul 2>&1
 	del /f /q morphe.zip.tmp* >nul 2>&1
 	del /f /q *.idsig >nul 2>&1
-	del /f /q tmp.bin >nul 2>&1
 	REM del /f /q tmp.bin.* >nul 2>&1
 	rd /s /q maintain\patched\merge >nul 2>&1
 	del /f /q maintain\patched\merge_merged.apk >nul 2>&1

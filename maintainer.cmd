@@ -29,7 +29,7 @@ md maintain\patched >nul 2>&1
 
 
 :: cleanup
-call morphe.cmd cleanup "silent"
+call morphe.cmd cleanup silent
 	
 
 REM Check if any APK exists in maintain folder
@@ -51,7 +51,8 @@ for %%j in ("maintain\original\*.apk*") do (
 	
 		call morphe.cmd "%%i"
 		
-		if not exist "%%~dpni-patched.apk" call morphe.cmd cleanup "silent" & del /f /q "maintain\patched\*.apk" & exit
+		if not exist "%%~dpni-patched.apk" call morphe.cmd cleanup silent & del /f /q "maintain\patched\*.apk" & exit
+		if %errorlevel% == 1 call morphe.cmd cleanup silent & del /f /q "maintain\patched\*.apk" & exit
 		
 		java -jar "!apkeditor!" info -i "%%~dpni-patched.apk" > tmp.bin
 		for /f "tokens=1,2 delims==" %%k in (tmp.bin) do (
@@ -86,7 +87,7 @@ for %%j in ("maintain\original\*.apk*") do (
 		
 		cls
 	)
-	call morphe.cmd cleanup "silent"
+	call morphe.cmd cleanup silent
 	del /f /q "maintain\patched\microg-*.apk" >nul 2>&1
 	mklink /h "maintain\patched\!microg!" "!microg!" >nul 2>&1
 	explorer.exe maintain\patched
