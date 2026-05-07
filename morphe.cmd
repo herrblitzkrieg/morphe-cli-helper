@@ -31,7 +31,11 @@ java -version
 echo.
 echo.
 echo Available commands:
-echo patch, list, cleanup, exit, reset
+echo 1 - patch
+echo 2 - list
+echo 3 - cleanup
+echo 4 - exit
+echo 5 - reset
 echo.
 echo.
 set /p command=">> "
@@ -54,7 +58,7 @@ if "!command!" == "4" exit /b
 if "!command!" == "reset" call :reset & goto menu
 if "!command!" == "r" call :reset & goto menu
 if "!command!" == "5" call :reset & goto menu
-echo Unknown command, sorry :( & echo. & pause & goto menu
+echo Unknown command, sorry & echo. & pause & goto menu
 
 
 :update
