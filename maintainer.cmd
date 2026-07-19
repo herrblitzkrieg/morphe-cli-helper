@@ -19,7 +19,7 @@ call morphe.cmd update
 
 :: init
 cls
-for %%i in ("morphe-cli*.jar") do set cli=%%i
+for %%i in ("morphe-desktop*.jar") do set cli=%%i
 for %%i in ("patches-*.mpp") do set patches=%%i
 for %%i in ("microg-*.apk") do set microg=%%i
 for %%i in ("APKEditor-*.jar") do set apkeditor=%%i

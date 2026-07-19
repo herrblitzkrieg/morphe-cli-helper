@@ -244,7 +244,7 @@ exit /b
 	echo.
 	
 	:: set patch specific options below
-	java -jar !cli! patch -p !patches! -f --unsigned -t tmp ^
+	java -jar !cli! patch -p !patches! -f --unsigned -t tmp -o "%~dp0morphe-patched.apk" ^
 		-e "Theme" -OdarkThemeBackgroundColor=@android:color/system_neutral1_900 -OlightThemeBackgroundColor=@android:color/white ^
 		-e "Disable Play Store updates" ^
 	morphe.apk
@@ -304,6 +304,8 @@ exit /b
 	
 :cleanup
 	rd /s /q tmp >nul 2>&1
+	rd /s /q morphe >nul 2>&1
+	rd /s /q morphe-data >nul 2>&1
 	del /f /q merge*.apk >nul 2>&1
 	del /f /q morphe.apk >nul 2>&1
 	del /f /q morphe2.apk >nul 2>&1
@@ -370,7 +372,7 @@ exit /b
 	
 	
 :init
-	for %%i in ("morphe-cli*.jar") do set cli=%%i
+	for %%i in ("morphe-desktop*.jar") do set cli=%%i
 	for %%i in ("patches-*.mpp") do set patches=%%i
 	for %%i in ("microg-*.apk") do set microg=%%i
 	for %%i in ("APKEditor-*.jar") do set apkeditor=%%i
